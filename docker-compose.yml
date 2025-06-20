@@ -1,0 +1,66 @@
+version: '3.3'
+
+services:
+  # Frontend UI
+  ui:
+    image: devopseasylearning/tarzan-ui:v0.0.1
+    ports:
+      - "3004:3000"
+    environment:
+      AUTH_HOST: auth
+      AUTH_PORT: 8080
+      WEATHER_HOST: weather
+      WEATHER_PORT: 5000
+      REDIS_USER: redis
+      REDIS_PASSWORD: redis
+    depends_on:
+      - auth
+      - weather
+      - redis
+
+  # Authentication Service
+  auth:
+    image: devopseasylearning/tarzan-auth:v0.0.1
+    environment:
+      DB_HOST: db
+      DB_PASSWORD: my-secret-pw
+    depends_on:
+      - db
+    command: >
+      sh -c "
+        echo 'Waiting for MySQL...';
+        for i in {1..30}; do
+          nc -z db 3306 && echo 'MySQL is up!' && break;
+          echo 'Waiting for DB...';
+          sleep 2;
+        done;
+        echo 'Starting auth service';
+        /app
+      "
+
+  # Weather Data Service
+  weather:
+    image: devopseasylearning/tarzan-weather:v0.0.2
+    environment:
+      APIKEY: ecbc396f46mshb65cbb1f82cf334p1fcc87jsna5e962a3c542
+
+  # Database
+  db:
+    image: mysql:8.0.2
+    environment:
+      MYSQL_ROOT_PASSWORD: my-secret-pw
+    # Uncomment below if you want persistent MySQL data:
+    # volumes:
+    #   - mysql-data:/var/lib/mysql
+
+  # Redis
+  redis:
+    image: redis:latest
+    environment:
+      REDIS_USER: redis
+      REDIS_PASSWORD: redis
+
+# Optional persistent volumes
+# volumes:
+#   mysql-data:
+
